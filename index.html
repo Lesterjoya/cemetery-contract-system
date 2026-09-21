@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Niche manager</title>
+<style>
+:root{--bg:#f4f4f1;--card:#fff;--text:#1d2320;--muted:#66706a;--line:#d9ddd8;--accent:#1f5f4a;--onaccent:#fff;--okbg:#dff1e8;--oktext:#124433;--badbg:#f9dfdc;--badtext:#8a2119}
+@media (prefers-color-scheme:dark){:root{--bg:#111513;--card:#1a201d;--text:#eef2ef;--muted:#9aa59f;--line:#2f3833;--accent:#6fcaa4;--onaccent:#0b2a1f;--okbg:#153a2c;--oktext:#a6e6cb;--badbg:#4a1c18;--badtext:#f5b5ae}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:16px;max-width:720px;margin-inline:auto}
+h1{font-size:22px;margin:8px 0 16px}
+h2{font-size:17px;margin:0 0 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:14px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center}
+.stat b{display:block;font-size:24px}
+.stat span{font-size:13px;color:var(--muted)}
+label{display:block;font-size:14px;color:var(--muted);margin:10px 0 4px}
+input,select{width:100%;padding:10px;font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:8px}
+button{font:inherit;padding:10px 14px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--text);cursor:pointer}
+button.primary{background:var(--accent);color:var(--onaccent);border-color:var(--accent);margin-top:14px;width:100%}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:flex;gap:8px}
+.row>*{flex:1}
+.item{border-top:1px solid var(--line);padding:12px 0}
+.item:first-of-type{border-top:0}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.niche{font-weight:600}
+.meta{font-size:14px;color:var(--muted)}
+.badge{font-size:13px;padding:3px 10px;border-radius:99px;white-space:nowrap;font-weight:600}
+.paid{background:var(--okbg);color:var(--oktext)}
+.unpaid{background:var(--badbg);color:var(--badtext)}
+.actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.actions button{padding:8px 12px;font-size:14px}
+.empty{color:var(--muted);text-align:center;padding:16px 0}
+.log{font-size:14px;padding:6px 0;border-top:1px solid var(--line)}
+.log:first-of-type{border-top:0}
+</style>
+</head>
+<body>
+<h1>Niche manager</h1>
+
+<div class="stats">
+  <div class="stat"><b id="sTotal">0</b><span>Contracts</span></div>
+  <div class="stat"><b id="sPaid">0</b><span>Paid</span></div>
+  <div class="stat"><b id="sUnpaid">0</b><span>Not paid</span></div>
+</div>
+
+<div class="card">
+  <h2>Add contract</h2>
+  <label for="fNiche">Niche number</label>
+  <input id="fNiche" placeholder="e.g. A-12">
+  <label for="fOwner">Owner name</label>
+  <input id="fOwner">
+  <label for="fPhone">Phone</label>
+  <input id="fPhone" type="tel">
+  <div class="row">
+    <div><label for="fFee">Annual fee</label><input id="fFee" type="number" min="0" step="0.01"></div>
+    <div><label for="fDate">Contract date</label><input id="fDate" type="date"></div>
+  </div>
+  <button class="primary" id="addBtn">Save contract</button>
+</div>
+
+<div class="card">
+  <h2>Contracts</h2>
+  <div class="row">
+    <input id="search" placeholder="Search niche or owner">
+    <select id="filter"><option value="all">All</option><option value="unpaid">Not paid</option><option value="paid">Paid</option></select>
+  </div>
+  <div id="list"></div>
+</div>
+
+<div class="card">
+  <h2>Recent activity</h2>
+  <div id="log"></div>
+</div>
+
+<div class="card">
+  <h2>Backup</h2>
+  <p class="meta">Data is saved in this browser only. Export a backup often.</p>
+  <div class="row">
+    <button id="exportBtn">Export backup</button>
+    <button id="importBtn">Import backup</button>
+  </div>
+  <input id="importFile" type="file" accept="application/json" hidden>
+</div>
+
+<script>
+const KEY = 'nicheData';
+let db = load();
+
+function load() {
+  try { return JSON.parse(localStorage.getItem(KEY)) || { contracts: [], log: [] }; }
+  catch (e) { return { contracts: [], log: [] }; }
+}
+function save() { localStorage.setItem(KEY, JSON.stringify(db)); render(); }
+function pad(n) { return String(n).padStart(2, '0'); }
+function fmt(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+function today() { return fmt(new Date()); }
+function addYear(s) { const [y, m, d] = s.split('-').map(Number); return fmt(new Date(y + 1, m - 1, d)); }
+function isPaid(c) { return c.paidUntil >= today(); }
+function esc(s) { return String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
+function money(n) { return Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+const $ = id => document.getElementById(id);
+$('fDate').value = today();
+
+$('addBtn').onclick = () => {
+  const niche = $('fNiche').value.trim();
+  const owner = $('fOwner').value.trim();
+  const date = $('fDate').value;
+  const fee = parseFloat($('fFee').value) || 0;
+  if (!niche || !owner || !date) { alert('Enter the niche number, owner name, and contract date.'); return; }
+  if (db.contracts.some(c => c.niche.toLowerCase() === niche.toLowerCase())) { alert('This niche already has a contract.'); return; }
+  const c = { id: Date.now(), niche, owner, phone: $('fPhone').value.trim(), fee, start: date, paidUntil: addYear(date) };
+  db.contracts.push(c);
+  db.log.unshift({ date: today(), type: 'Annual payment', text: niche + ' - ' + owner, amount: fee });
+  ['fNiche', 'fOwner', 'fPhone', 'fFee'].forEach(id => $(id).value = '');
+  save();
+};
+
+$('list').onclick = e => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  const c = db.contracts.find(x => x.id == btn.dataset.id);
+  if (!c) return;
+
+  if (btn.dataset.act === 'pay') {
+    const amt = prompt('Amount received for one year', c.fee);
+    if (amt === null) return;
+    c.paidUntil = addYear(c.paidUntil);
+    db.log.unshift({ date: today(), type: 'Annual payment', text: c.niche + ' - ' + c.owner, amount: parseFloat(amt) || 0 });
+    save();
+  }
+
+  if (btn.dataset.act === 'open') {
+    if (!isPaid(c)) { alert('Not paid. Record the annual payment before opening this niche.'); return; }
+    if (!confirm('Is the requester the owner (' + c.owner + ') or an authorized person?')) return;
+    const name = prompt('Name of the deceased');
+    if (!name) return;
+    const fee = prompt('Opening fee received');
+    if (fee === null) return;
+    db.log.unshift({ date: today(), type: 'Opening', text: c.niche + ' - ' + name.trim(), amount: parseFloat(fee) || 0 });
+    save();
+  }
+
+  if (btn.dataset.act === 'del') {
+    if (!confirm('Delete contract for niche ' + c.niche + '? Past activity stays in the log.')) return;
+    db.contracts = db.contracts.filter(x => x.id !== c.id);
+    save();
+  }
+};
+
+$('search').oninput = render;
+$('filter').onchange = render;
+
+$('exportBtn').onclick = () => {
+  const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'niche-backup-' + today() + '.json';
+  a.click();
+};
+$('importBtn').onclick = () => $('importFile').click();
+$('importFile').onchange = e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const d = JSON.parse(r.result);
+      if (!Array.isArray(d.contracts) || !Array.isArray(d.log)) throw 0;
+      if (!confirm('Replace current data with this backup?')) return;
+      db = d;
+      save();
+    } catch (err) { alert('This file is not a valid backup.'); }
+  };
+  r.readAsText(f);
+  e.target.value = '';
+};
+
+function render() {
+  const paidCount = db.contracts.filter(isPaid).length;
+  $('sTotal').textContent = db.contracts.length;
+  $('sPaid').textContent = paidCount;
+  $('sUnpaid').textContent = db.contracts.length - paidCount;
+
+  const q = $('search').value.trim().toLowerCase();
+  const f = $('filter').value;
+  const rows = db.contracts
+    .filter(c => (c.niche + ' ' + c.owner).toLowerCase().includes(q))
+    .filter(c => f === 'all' || (f === 'paid') === isPaid(c))
+    .sort((a, b) => a.niche.localeCompare(b.niche, undefined, { numeric: true }));
+
+  $('list').innerHTML = rows.length ? rows.map(c => {
+    const paid = isPaid(c);
+    return '<div class="item"><div class="top"><div><div class="niche">' + esc(c.niche) + '</div>' +
+      '<div>' + esc(c.owner) + '</div>' +
+      '<div class="meta">' + (c.phone ? esc(c.phone) + ' | ' : '') + 'Paid until ' + c.paidUntil + ' | Fee ' + money(c.fee) + '</div></div>' +
+      '<span class="badge ' + (paid ? 'paid' : 'unpaid') + '">' + (paid ? 'Paid' : 'Not paid') + '</span></div>' +
+      '<div class="actions"><button data-act="pay" data-id="' + c.id + '">Record payment</button>' +
+      '<button data-act="open" data-id="' + c.id + '">Open niche</button>' +
+      '<button data-act="del" data-id="' + c.id + '">Delete</button></div></div>';
+  }).join('') : '<div class="empty">No contracts yet. Add one above.</div>';
+
+  $('log').innerHTML = db.log.length ? db.log.slice(0, 20).map(l =>
+    '<div class="log"><b>' + esc(l.type) + '</b> ' + money(l.amount) + '<br><span class="meta">' + l.date + ' | ' + esc(l.text) + '</span></div>'
+  ).join('') : '<div class="empty">No activity yet.</div>';
+}
+render();
+</script>
+</body>
+</html>
