@@ -5,22 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Niche manager</title>
 <style>
-:root{--bg:#f4f4f1;--card:#fff;--text:#1d2320;--muted:#66706a;--line:#d9ddd8;--accent:#1f5f4a;--onaccent:#fff;--okbg:#dff1e8;--oktext:#124433;--badbg:#f9dfdc;--badtext:#8a2119}
-@media (prefers-color-scheme:dark){:root{--bg:#111513;--card:#1a201d;--text:#eef2ef;--muted:#9aa59f;--line:#2f3833;--accent:#6fcaa4;--onaccent:#0b2a1f;--okbg:#153a2c;--oktext:#a6e6cb;--badbg:#4a1c18;--badtext:#f5b5ae}}
+:root{--bg:#f4f4f1;--card:#fff;--text:#1d2320;--muted:#66706a;--line:#d9ddd8;--accent:#1f5f4a;--onaccent:#fff;--okbg:#dff1e8;--oktext:#124433;--badbg:#f9dfdc;--badtext:#8a2119;--warnbg:#fbeed0;--warntext:#6b4708}
+@media (prefers-color-scheme:dark){:root{--bg:#111513;--card:#1a201d;--text:#eef2ef;--muted:#9aa59f;--line:#2f3833;--accent:#6fcaa4;--onaccent:#0b2a1f;--okbg:#153a2c;--oktext:#a6e6cb;--badbg:#4a1c18;--badtext:#f5b5ae;--warnbg:#43330f;--warntext:#f0d089}}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:16px;max-width:720px;margin-inline:auto}
 h1{font-size:22px;margin:8px 0 16px}
 h2{font-size:17px;margin:0 0 12px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:14px}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
-.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center}
-.stat b{display:block;font-size:24px}
-.stat span{font-size:13px;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 4px;text-align:center}
+.stat b{display:block;font-size:22px}
+.stat span{font-size:12px;color:var(--muted)}
 label{display:block;font-size:14px;color:var(--muted);margin:10px 0 4px}
 input,select{width:100%;padding:10px;font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:8px}
 button{font:inherit;padding:10px 14px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--text);cursor:pointer}
 button.primary{background:var(--accent);color:var(--onaccent);border-color:var(--accent);margin-top:14px;width:100%}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.back{margin-bottom:12px}
 .row{display:flex;gap:8px}
 .row>*{flex:1}
 .item{border-top:1px solid var(--line);padding:12px 0}
@@ -28,129 +30,302 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
 .niche{font-weight:600}
 .meta{font-size:14px;color:var(--muted)}
+.tag{display:inline-block;font-size:12px;padding:1px 8px;border:1px solid var(--line);border-radius:99px;color:var(--muted);margin-left:6px;font-weight:400}
+.badges{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
 .badge{font-size:13px;padding:3px 10px;border-radius:99px;white-space:nowrap;font-weight:600}
 .paid{background:var(--okbg);color:var(--oktext)}
 .unpaid{background:var(--badbg);color:var(--badtext)}
+.warn{background:var(--warnbg);color:var(--warntext)}
 .actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
 .actions button{padding:8px 12px;font-size:14px}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid var(--line);font-size:15px}
+.kv span:first-child{color:var(--muted)}
+.kv span:last-child{text-align:right}
 .empty{color:var(--muted);text-align:center;padding:16px 0}
-.log{font-size:14px;padding:6px 0;border-top:1px solid var(--line)}
+.log{font-size:14px;padding:8px 0;border-top:1px solid var(--line)}
 .log:first-of-type{border-top:0}
 </style>
 </head>
 <body>
 <h1>Niche manager</h1>
 
-<div class="stats">
-  <div class="stat"><b id="sTotal">0</b><span>Contracts</span></div>
-  <div class="stat"><b id="sPaid">0</b><span>Paid</span></div>
-  <div class="stat"><b id="sUnpaid">0</b><span>Not paid</span></div>
-</div>
-
-<div class="card">
-  <h2>Add contract</h2>
-  <label for="fNiche">Niche number</label>
-  <input id="fNiche" placeholder="e.g. A-12">
-  <label for="fOwner">Owner name</label>
-  <input id="fOwner">
-  <label for="fPhone">Phone</label>
-  <input id="fPhone" type="tel">
-  <div class="row">
-    <div><label for="fFee">Annual fee</label><input id="fFee" type="number" min="0" step="0.01"></div>
-    <div><label for="fDate">Contract date</label><input id="fDate" type="date"></div>
+<div id="main">
+  <div class="stats">
+    <div class="stat"><b id="sTotal">0</b><span>Contracts</span></div>
+    <div class="stat"><b id="sPaid">0</b><span>Paid</span></div>
+    <div class="stat"><b id="sUnpaid">0</b><span>Not paid</span></div>
+    <div class="stat"><b id="sRenew">0</b><span>Renewal due</span></div>
   </div>
-  <button class="primary" id="addBtn">Save contract</button>
-</div>
 
-<div class="card">
-  <h2>Contracts</h2>
-  <div class="row">
-    <input id="search" placeholder="Search niche or owner">
-    <select id="filter"><option value="all">All</option><option value="unpaid">Not paid</option><option value="paid">Paid</option></select>
+  <div class="card">
+    <h2>Add contract</h2>
+    <label for="fNiche">Niche number</label>
+    <input id="fNiche" placeholder="e.g. A-12">
+    <label for="fType">Niche type</label>
+    <select id="fType"><option value="">Select type</option><option>Apartment</option><option>Museum</option></select>
+    <label for="fOwner">Owner name</label>
+    <input id="fOwner">
+    <label for="fPhone">Phone</label>
+    <input id="fPhone" type="tel">
+    <div class="row">
+      <div><label for="fFee">Annual fee</label><input id="fFee" type="number" min="0" step="0.01"></div>
+      <div><label for="fDate">Contract date</label><input id="fDate" type="date"></div>
+    </div>
+    <label for="fRenew">Renewal date (every 10 years)</label>
+    <input id="fRenew" type="date">
+    <label for="fPaid">Annual fee paid until (optional)</label>
+    <input id="fPaid" type="date">
+    <p class="meta">Leave "paid until" empty for a new contract. The first year is then counted as paid on the contract date. For an existing contract, enter the date its annual fee runs to.</p>
+    <button class="primary" id="addBtn">Save contract</button>
   </div>
-  <div id="list"></div>
-</div>
 
-<div class="card">
-  <h2>Recent activity</h2>
-  <div id="log"></div>
-</div>
-
-<div class="card">
-  <h2>Backup</h2>
-  <p class="meta">Data is saved in this browser only. Export a backup often.</p>
-  <div class="row">
-    <button id="exportBtn">Export backup</button>
-    <button id="importBtn">Import backup</button>
+  <div class="card">
+    <h2>Contracts</h2>
+    <div class="row">
+      <input id="search" placeholder="Search niche or owner">
+      <select id="filter">
+        <option value="all">All</option>
+        <option value="unpaid">Not paid</option>
+        <option value="paid">Paid</option>
+        <option value="renewal">Renewal due</option>
+        <option value="apartment">Apartment niches</option>
+        <option value="museum">Museum niches</option>
+      </select>
+    </div>
+    <div id="list"></div>
   </div>
-  <input id="importFile" type="file" accept="application/json" hidden>
+
+  <div class="card">
+    <h2>Recent activity</h2>
+    <div id="log"></div>
+  </div>
+
+  <div class="card">
+    <h2>Backup</h2>
+    <p class="meta">Data is saved in this browser only. Export a backup often.</p>
+    <div class="row">
+      <button id="exportBtn">Export backup</button>
+      <button id="importBtn">Import backup</button>
+    </div>
+    <input id="importFile" type="file" accept="application/json" hidden>
+  </div>
 </div>
+
+<div id="profile" hidden></div>
 
 <script>
 const KEY = 'nicheData';
+const RENEW_YEARS = 10;
+const WARN_YEARS = 1;
 let db = load();
+let currentId = null;
+let editing = false;
 
 function load() {
-  try { return JSON.parse(localStorage.getItem(KEY)) || { contracts: [], log: [] }; }
+  try { return fix(JSON.parse(localStorage.getItem(KEY)) || { contracts: [], log: [] }); }
   catch (e) { return { contracts: [], log: [] }; }
+}
+function fix(d) {
+  d.contracts = d.contracts || [];
+  d.log = d.log || [];
+  d.contracts.forEach(c => { if (!c.renewDate) c.renewDate = addYears(c.start, RENEW_YEARS); });
+  d.log.forEach(l => {
+    if (l.cid) return;
+    const c = d.contracts.find(x => String(l.text).startsWith(x.niche + ' - '));
+    if (c) {
+      l.cid = c.id;
+      if (l.type === 'Opening') l.note = l.text.slice(c.niche.length + 3);
+    }
+  });
+  return d;
 }
 function save() { localStorage.setItem(KEY, JSON.stringify(db)); render(); }
 function pad(n) { return String(n).padStart(2, '0'); }
 function fmt(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
 function today() { return fmt(new Date()); }
-function addYear(s) { const [y, m, d] = s.split('-').map(Number); return fmt(new Date(y + 1, m - 1, d)); }
+function addYears(s, n) { const [y, m, d] = s.split('-').map(Number); return fmt(new Date(y + n, m - 1, d)); }
+function validDate(s) { const d = new Date(s + 'T00:00:00'); return /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(d) && fmt(d) === s; }
 function isPaid(c) { return c.paidUntil >= today(); }
+function renewState(c) {
+  if (c.renewDate < today()) return 'expired';
+  if (c.renewDate <= addYears(today(), WARN_YEARS)) return 'soon';
+  return 'ok';
+}
 function esc(s) { return String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
 function money(n) { return Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function find(id) { return db.contracts.find(x => String(x.id) === String(id)); }
+function logAdd(c, type, amount, note) {
+  const text = type === 'Opening' ? c.niche + ' - ' + note : c.niche + ' - ' + c.owner + (note ? ' (' + note + ')' : '');
+  db.log.unshift({ date: today(), type, cid: c.id, text, amount, note: note || '' });
+}
+function badges(c) {
+  const rs = renewState(c);
+  return '<span class="badge ' + (isPaid(c) ? 'paid' : 'unpaid') + '">' + (isPaid(c) ? 'Paid' : 'Not paid') + '</span>' +
+    (rs === 'expired' ? '<span class="badge unpaid">Renewal overdue</span>' : rs === 'soon' ? '<span class="badge warn">Renewal due</span>' : '');
+}
+function typeTag(c) { return '<span class="tag">' + (c.type ? esc(c.type) : 'Type not set') + '</span>'; }
 
 const $ = id => document.getElementById(id);
 $('fDate').value = today();
+function setRenew() { if ($('fDate').value) $('fRenew').value = addYears($('fDate').value, RENEW_YEARS); }
+$('fDate').oninput = $('fDate').onchange = setRenew;
+setRenew();
 
 $('addBtn').onclick = () => {
   const niche = $('fNiche').value.trim();
   const owner = $('fOwner').value.trim();
+  const type = $('fType').value;
   const date = $('fDate').value;
   const fee = parseFloat($('fFee').value) || 0;
-  if (!niche || !owner || !date) { alert('Enter the niche number, owner name, and contract date.'); return; }
+  if (!niche || !owner || !type || !date) { alert('Enter the niche number, type, owner name, and contract date.'); return; }
   if (db.contracts.some(c => c.niche.toLowerCase() === niche.toLowerCase())) { alert('This niche already has a contract.'); return; }
-  const c = { id: Date.now(), niche, owner, phone: $('fPhone').value.trim(), fee, start: date, paidUntil: addYear(date) };
+  const customPaid = $('fPaid').value;
+  const c = {
+    id: Date.now(), niche, type, owner, phone: $('fPhone').value.trim(), fee, start: date,
+    paidUntil: customPaid || addYears(date, 1),
+    renewDate: $('fRenew').value || addYears(date, RENEW_YEARS)
+  };
   db.contracts.push(c);
-  db.log.unshift({ date: today(), type: 'Annual payment', text: niche + ' - ' + owner, amount: fee });
-  ['fNiche', 'fOwner', 'fPhone', 'fFee'].forEach(id => $(id).value = '');
+  if (!customPaid) logAdd(c, 'Annual payment', fee, '');
+  ['fNiche', 'fOwner', 'fPhone', 'fFee', 'fPaid'].forEach(id => $(id).value = '');
+  $('fType').value = '';
+  setRenew();
   save();
 };
 
-$('list').onclick = e => {
-  const btn = e.target.closest('button');
-  if (!btn) return;
-  const c = db.contracts.find(x => x.id == btn.dataset.id);
-  if (!c) return;
+function handleAction(act, c) {
+  if (act === 'view') { openProfile(c.id); return; }
 
-  if (btn.dataset.act === 'pay') {
+  if (act === 'pay') {
     const amt = prompt('Amount received for one year', c.fee);
     if (amt === null) return;
-    c.paidUntil = addYear(c.paidUntil);
-    db.log.unshift({ date: today(), type: 'Annual payment', text: c.niche + ' - ' + c.owner, amount: parseFloat(amt) || 0 });
+    c.paidUntil = addYears(c.paidUntil, 1);
+    logAdd(c, 'Annual payment', parseFloat(amt) || 0, '');
     save();
   }
 
-  if (btn.dataset.act === 'open') {
-    if (!isPaid(c)) { alert('Not paid. Record the annual payment before opening this niche.'); return; }
+  if (act === 'renew') {
+    if (renewState(c) === 'ok' && !confirm('Renewal is not due until ' + c.renewDate + '. Renew anyway?')) return;
+    const newDate = addYears(c.renewDate, RENEW_YEARS);
+    const amt = prompt('Renew contract until ' + newDate + '. Renewal fee received:');
+    if (amt === null) return;
+    c.renewDate = newDate;
+    logAdd(c, 'Contract renewal', parseFloat(amt) || 0, 'Until ' + newDate);
+    save();
+  }
+
+  if (act === 'open') {
+    const problems = [];
+    if (!isPaid(c)) problems.push('the annual fee is not paid');
+    if (renewState(c) === 'expired') problems.push('the contract renewal is overdue');
+    if (problems.length) { alert('Cannot open this niche: ' + problems.join(' and ') + '.'); return; }
     if (!confirm('Is the requester the owner (' + c.owner + ') or an authorized person?')) return;
     const name = prompt('Name of the deceased');
     if (!name) return;
     const fee = prompt('Opening fee received');
     if (fee === null) return;
-    db.log.unshift({ date: today(), type: 'Opening', text: c.niche + ' - ' + name.trim(), amount: parseFloat(fee) || 0 });
+    logAdd(c, 'Opening', parseFloat(fee) || 0, name.trim());
     save();
   }
 
-  if (btn.dataset.act === 'del') {
+  if (act === 'edit') { editing = true; renderProfile(); }
+
+  if (act === 'del') {
     if (!confirm('Delete contract for niche ' + c.niche + '? Past activity stays in the log.')) return;
     db.contracts = db.contracts.filter(x => x.id !== c.id);
+    closeProfile();
     save();
   }
+}
+
+function saveEdit(c) {
+  const niche = $('eNiche').value.trim();
+  const owner = $('eOwner').value.trim();
+  const type = $('eType').value;
+  const start = $('eStart').value;
+  const paid = $('ePaid').value;
+  const renew = $('eRenew').value;
+  if (!niche || !owner || !type || !start || !paid || !renew) { alert('Fill in the niche number, type, owner name, and all dates.'); return; }
+  if (db.contracts.some(x => x.id !== c.id && x.niche.toLowerCase() === niche.toLowerCase())) { alert('Another contract already uses this niche number.'); return; }
+  Object.assign(c, { niche, owner, type, phone: $('ePhone').value.trim(), fee: parseFloat($('eFee').value) || 0, start, paidUntil: paid, renewDate: renew });
+  editing = false;
+  save();
+}
+
+$('list').onclick = e => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  const c = find(b.dataset.id);
+  if (c) handleAction(b.dataset.act, c);
 };
+
+$('profile').onclick = e => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  const act = b.dataset.act;
+  if (act === 'back') { closeProfile(); render(); return; }
+  const c = find(currentId);
+  if (!c) return;
+  if (act === 'saveedit') { saveEdit(c); return; }
+  if (act === 'canceledit') { editing = false; renderProfile(); return; }
+  handleAction(act, c);
+};
+
+function openProfile(id) {
+  currentId = id;
+  editing = false;
+  $('main').hidden = true;
+  $('profile').hidden = false;
+  renderProfile();
+  window.scrollTo(0, 0);
+}
+function closeProfile() {
+  currentId = null;
+  editing = false;
+  $('profile').hidden = true;
+  $('main').hidden = false;
+}
+
+function kv(k, v) { return '<div class="kv"><span>' + k + '</span><span>' + v + '</span></div>'; }
+function typeOptions(sel) {
+  return '<option value="">Select type</option>' + ['Apartment', 'Museum'].map(t => '<option' + (t === sel ? ' selected' : '') + '>' + t + '</option>').join('');
+}
+
+function renderProfile() {
+  const c = find(currentId);
+  if (!c) { closeProfile(); render(); return; }
+  const hist = db.log.filter(l => l.cid === c.id);
+  const total = hist.reduce((s, l) => s + (l.amount || 0), 0);
+  let html = '<button class="back" data-act="back">Back to contracts</button>';
+
+  if (editing) {
+    html += '<div class="card"><h2>Edit details</h2>' +
+      '<label for="eNiche">Niche number</label><input id="eNiche" value="' + esc(c.niche) + '">' +
+      '<label for="eType">Niche type</label><select id="eType">' + typeOptions(c.type) + '</select>' +
+      '<label for="eOwner">Owner name</label><input id="eOwner" value="' + esc(c.owner) + '">' +
+      '<label for="ePhone">Phone</label><input id="ePhone" type="tel" value="' + esc(c.phone || '') + '">' +
+      '<div class="row"><div><label for="eFee">Annual fee</label><input id="eFee" type="number" min="0" step="0.01" value="' + esc(c.fee) + '"></div>' +
+      '<div><label for="eStart">Contract date</label><input id="eStart" type="date" value="' + esc(c.start) + '"></div></div>' +
+      '<div class="row"><div><label for="ePaid">Fee paid until</label><input id="ePaid" type="date" value="' + esc(c.paidUntil) + '"></div>' +
+      '<div><label for="eRenew">Renewal date</label><input id="eRenew" type="date" value="' + esc(c.renewDate) + '"></div></div>' +
+      '<div class="row" style="margin-top:14px"><button class="primary" style="margin-top:0" data-act="saveedit">Save changes</button><button data-act="canceledit">Cancel</button></div></div>';
+  } else {
+    html += '<div class="card"><div class="top"><div><span class="niche" style="font-size:20px">' + esc(c.niche) + '</span>' + typeTag(c) + '</div>' +
+      '<div class="badges">' + badges(c) + '</div></div><div style="margin-top:10px">' +
+      kv('Owner', esc(c.owner)) + kv('Phone', c.phone ? esc(c.phone) : '-') + kv('Annual fee', money(c.fee)) +
+      kv('Contract date', c.start) + kv('Fee paid until', c.paidUntil) + kv('Renewal date', c.renewDate) + '</div>' +
+      '<div class="actions"><button data-act="pay">Record payment</button><button data-act="renew">Renew contract</button>' +
+      '<button data-act="open">Open niche</button><button data-act="edit">Edit details</button><button data-act="del">Delete</button></div></div>';
+  }
+
+  html += '<div class="card"><h2>Payment history</h2>' + (hist.length ?
+    '<p class="meta">Total collected: ' + money(total) + '</p>' + hist.map(l =>
+      '<div class="log"><div class="top"><b>' + esc(l.type) + '</b><span>' + money(l.amount) + '</span></div>' +
+      '<span class="meta">' + l.date + (l.note ? ' | ' + (l.type === 'Opening' ? 'Deceased: ' : '') + esc(l.note) : '') + '</span></div>').join('')
+    : '<div class="empty">No payments recorded yet.</div>') + '</div>';
+
+  $('profile').innerHTML = html;
+}
 
 $('search').oninput = render;
 $('filter').onchange = render;
@@ -172,7 +347,8 @@ $('importFile').onchange = e => {
       const d = JSON.parse(r.result);
       if (!Array.isArray(d.contracts) || !Array.isArray(d.log)) throw 0;
       if (!confirm('Replace current data with this backup?')) return;
-      db = d;
+      db = fix(d);
+      closeProfile();
       save();
     } catch (err) { alert('This file is not a valid backup.'); }
   };
@@ -185,28 +361,30 @@ function render() {
   $('sTotal').textContent = db.contracts.length;
   $('sPaid').textContent = paidCount;
   $('sUnpaid').textContent = db.contracts.length - paidCount;
+  $('sRenew').textContent = db.contracts.filter(c => renewState(c) !== 'ok').length;
 
   const q = $('search').value.trim().toLowerCase();
   const f = $('filter').value;
   const rows = db.contracts
     .filter(c => (c.niche + ' ' + c.owner).toLowerCase().includes(q))
-    .filter(c => f === 'all' || (f === 'paid') === isPaid(c))
+    .filter(c => f === 'all' || (f === 'paid' && isPaid(c)) || (f === 'unpaid' && !isPaid(c)) ||
+      (f === 'renewal' && renewState(c) !== 'ok') || (f === 'apartment' && c.type === 'Apartment') || (f === 'museum' && c.type === 'Museum'))
     .sort((a, b) => a.niche.localeCompare(b.niche, undefined, { numeric: true }));
 
-  $('list').innerHTML = rows.length ? rows.map(c => {
-    const paid = isPaid(c);
-    return '<div class="item"><div class="top"><div><div class="niche">' + esc(c.niche) + '</div>' +
-      '<div>' + esc(c.owner) + '</div>' +
-      '<div class="meta">' + (c.phone ? esc(c.phone) + ' | ' : '') + 'Paid until ' + c.paidUntil + ' | Fee ' + money(c.fee) + '</div></div>' +
-      '<span class="badge ' + (paid ? 'paid' : 'unpaid') + '">' + (paid ? 'Paid' : 'Not paid') + '</span></div>' +
-      '<div class="actions"><button data-act="pay" data-id="' + c.id + '">Record payment</button>' +
-      '<button data-act="open" data-id="' + c.id + '">Open niche</button>' +
-      '<button data-act="del" data-id="' + c.id + '">Delete</button></div></div>';
-  }).join('') : '<div class="empty">No contracts yet. Add one above.</div>';
+  $('list').innerHTML = rows.length ? rows.map(c =>
+    '<div class="item"><div class="top"><div><div class="niche">' + esc(c.niche) + typeTag(c) + '</div>' +
+    '<div>' + esc(c.owner) + '</div>' +
+    '<div class="meta">Paid until ' + c.paidUntil + ' | Renewal ' + c.renewDate + '</div></div>' +
+    '<div class="badges">' + badges(c) + '</div></div>' +
+    '<div class="actions"><button data-act="view" data-id="' + c.id + '">View profile</button>' +
+    '<button data-act="pay" data-id="' + c.id + '">Record payment</button></div></div>'
+  ).join('') : '<div class="empty">No contracts yet. Add one above.</div>';
 
   $('log').innerHTML = db.log.length ? db.log.slice(0, 20).map(l =>
     '<div class="log"><b>' + esc(l.type) + '</b> ' + money(l.amount) + '<br><span class="meta">' + l.date + ' | ' + esc(l.text) + '</span></div>'
   ).join('') : '<div class="empty">No activity yet.</div>';
+
+  if (currentId !== null && !editing) renderProfile();
 }
 render();
 </script>
