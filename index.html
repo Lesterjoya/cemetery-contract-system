@@ -56,11 +56,11 @@ body{
   padding:12px 10px 22px;
 }
 
-.cross{
-  font-family:Georgia,serif;
-  font-size:32px;
-  line-height:1;
-  margin-bottom:7px;
+.site-logo{
+  width:90px;
+  height:auto;
+  display:block;
+  margin:0 auto 10px;
 }
 
 .site-title{
@@ -430,7 +430,7 @@ button:focus-visible{
 <!-- CEMETERY HEADER -->
 
 <header class="site-header">
-  <div class="cross">✝</div>
+  <img src="IMG_2895_4bb198.png" alt="Parroquia de Santa Cruz Logo" class="site-logo">
   <h1 class="site-title">Sta. Cruz Catholic Cemetery</h1>
   <div class="site-subtitle">
     Niche Contract &amp; Cemetery Management System
@@ -1007,8 +1007,7 @@ function setRenew(){
 }
 
 
-$('fDate').oninput =
-$('fDate').onchange =
+$('fDate').oninput =$('fDate').onchange =
 setRenew;
 
 setRenew();
